@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Test Page</title>
+
+</head>
+
+<body>
+
+    <h1>Hello, Bitcoin Clock!</h1>
+
+    <p>This is a test page.</p>
+    <p>The current local time is: <span id="current-time">--:--:--</span></p>
+
+    <script>
+      (function () {
+        function updateTime() {
+          const now = new Date();
+          const formatted = now.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+          });
+          const target = document.getElementById('current-time');
+          if (target) target.textContent = formatted;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+      })();
+    </script>
+
+</body>
+
+</html>

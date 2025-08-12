@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BLOCKADORO</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        --bitcoin-orange: #f2a900;
+        --bg-0: #0b0b0c;
+        --bg-1: #121216;
+        --text: #f6f6f9;
+        --muted: #a1a1aa;
+        --card: #151519;
+        --accent-dim: #f2a90022;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: "Orbitron", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text);
+        background: radial-gradient(1200px 800px at 20% 0%, #16161c 0%, var(--bg-0) 40%, var(--bg-1) 100%);
+        letter-spacing: 0.02em;
+      }
+
+      .container {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .orb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--bitcoin-orange);
+        box-shadow: 0 0 24px var(--bitcoin-orange);
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 22px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .tagline {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, #16161b 0%, #121217 100%);
+        border: 1px solid var(--accent-dim);
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 0 48px rgba(242, 169, 0, 0.04);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 640px) {
+        .controls { grid-template-columns: 1fr auto; align-items: center; }
+      }
+
+      label.select-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.18em; }
+
+      .timezone-select {
+        width: 100%;
+        margin-top: 6px;
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--accent-dim);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 14px;
+        outline: none;
+      }
+      .timezone-select:focus { border-color: var(--bitcoin-orange); box-shadow: 0 0 0 2px #f2a90033; }
+      @media (min-width: 640px) { .timezone-select { width: auto; } }
+
+      .toggle-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 18px;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .toggle input { accent-color: var(--bitcoin-orange); width: 18px; height: 18px; }
+
+      .time-display {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        justify-items: center;
+        text-align: center;
+      }
+      .clock {
+        font-size: clamp(38px, 7vw, 80px);
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--bitcoin-orange);
+        text-shadow: 0 0 22px rgba(242, 169, 0, 0.35);
+      }
+      .tz-note { font-size: 13px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+      .cards {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--accent-dim);
+        border-radius: 12px;
+        padding: 16px;
+        min-height: 92px;
+        display: grid;
+        align-content: center;
+        gap: 6px;
+      }
+      .card h3 { margin: 0; font-size: 12px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; }
+      .value { font-size: 28px; font-weight: 800; }
+      .value .unit { font-size: 14px; color: var(--muted); margin-left: 6px; }
+      .small { font-size: 12px; color: var(--muted); }
+      .hidden { display: none !important; }
+      .error { color: #ff6b6b; }
+
+      a { color: var(--bitcoin-orange); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      /* Block Timer */
+      .timer-time {
+        font-size: clamp(48px, 8vw, 96px);
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--bitcoin-orange);
+        text-shadow: 0 0 18px rgba(242, 169, 0, 0.32);
+      }
+
+      .timer-panel {
+        margin-top: 6px;
+        padding-top: 22px;
+        padding-bottom: 22px;
+      }
+      .timer-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+      .blocks-input {
+        width: 84px;
+        background: var(--bg-1);
+        color: var(--text);
+        border: 1px solid var(--accent-dim);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        outline: none;
+      }
+      .blocks-input:disabled { opacity: 0.6; }
+      .btn {
+        appearance: none;
+        border: 1px solid var(--bitcoin-orange);
+        background: linear-gradient(180deg, rgba(242,169,0,0.18), rgba(242,169,0,0.08));
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: transform 0.05s ease, box-shadow 0.2s ease;
+      }
+      .btn:hover { box-shadow: 0 0 0 2px #f2a90022, 0 4px 18px rgba(242,169,0,0.18); }
+      .btn:active { transform: translateY(1px); }
+      .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+      .btn.btn-secondary { border-color: var(--accent-dim); background: var(--card); }
+
+      .btn-icon {
+        padding: 6px 10px;
+        min-width: 36px;
+        line-height: 1;
+      }
+
+      .toggle-col {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        text-align: right;
+      }
+
+      /* Success banner */
+      .success-banner {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: radial-gradient(600px 300px at 20% -40%, rgba(242,169,0,0.16), rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(242,169,0,0.08), rgba(242,169,0,0.04));
+        border: 1px solid var(--accent-dim);
+        box-shadow: 0 0 0 2px #f2a90022, 0 8px 28px rgba(242, 169, 0, 0.18), inset 0 0 24px rgba(242,169,0,0.06);
+        color: var(--text);
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .success-banner .emoji { filter: drop-shadow(0 0 12px rgba(242,169,0,0.45)); }
+
+      /* Block mined overlay */
+      #block-mined-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        display: grid;
+        place-items: center;
+        opacity: 0;
+        transition: opacity 120ms ease-in;
+        z-index: 999;
+      }
+      #block-mined-overlay.show {
+        opacity: 1;
+        animation: overlay-flash 900ms ease forwards;
+      }
+      #block-mined-overlay .overlay-inner {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(800px 600px at 50% 50%, rgba(242,169,0,0.25), rgba(0,0,0,0) 60%);
+      }
+      #block-mined-overlay .overlay-text {
+        font-size: clamp(28px, 5.6vw, 64px);
+        font-weight: 900;
+        color: var(--bitcoin-orange);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-shadow: 0 0 22px rgba(242,169,0,0.55), 0 0 44px rgba(242,169,0,0.35);
+        animation: pop-glow 900ms ease forwards;
+      }
+      @keyframes pop-glow {
+        0% { transform: scale(0.6); opacity: 0; }
+        40% { transform: scale(1.08); opacity: 1; }
+        60% { transform: scale(1.0); }
+        100% { transform: scale(1.0); opacity: 0; }
+      }
+      @keyframes overlay-flash {
+        0% { background-color: rgba(242,169,0,0.10); }
+        30% { background-color: rgba(242,169,0,0.18); }
+        100% { background-color: transparent; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="brand">
+          <span class="orb" aria-hidden="true"></span>
+          <h1>BLOCKADORO</h1>
+        </div>
+        <div class="tagline">A personal proof-of-work timer</div>
+      </header>
+
+      <section class="panel timer-panel" aria-label="Session timer">
+        <div id="card-timer" class="card" aria-live="polite" style="border-color: var(--bitcoin-orange); box-shadow: 0 0 0 2px #f2a90022, inset 0 0 24px rgba(242,169,0,0.08);">
+          <h3>Session Timer</h3>
+          <div class="timer-time" id="timer-time">00:00</div>
+          <div id="session-complete" class="success-banner hidden"><span class="emoji">🎉</span> <span id="session-complete-text"></span></div>
+          <div class="timer-controls">
+            <label for="blocks-input" class="select-label" style="margin-right:2px;">Blocks to mine:</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button id="blocks-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease blocks to mine" title="Decrease blocks to mine">−</button>
+              <input id="blocks-input" class="blocks-input" type="number" min="1" max="5" step="1" value="1" />
+              <button id="blocks-increment" class="btn btn-secondary btn-icon" aria-label="Increase blocks to mine" title="Increase blocks to mine">+</button>
+            </div>
+            <button id="timer-start-pause" class="btn">Start</button>
+            <button id="timer-reset" class="btn btn-secondary" disabled>Reset</button>
+          </div>
+          <div class="timer-controls" style="margin-top:10px; justify-content: flex-start; align-items: center;">
+            <div class="small" id="since-last-block">Time since last block: —</div>
+          </div>
+          <div class="small" id="last-block">Last block: —</div>
+          <div class="small" id="avg-block">Average block (last 10): —</div>
+          <div class="small" id="timer-meta">Estimated session length: 10:00</div>
+          
+        </div>
+      </section>
+
+      <section class="cards" aria-label="Data cards">
+        <div id="card-time" class="card hidden" aria-live="polite">
+          <h3>Current Time</h3>
+          <div class="value" id="time-value">—</div>
+          <div class="small" id="time-meta">Hidden</div>
+        </div>
+        <div id="card-block" class="card hidden" aria-live="polite">
+          <h3>Bitcoin Block Height</h3>
+          <div class="value" id="block-value">—</div>
+          <div class="small" id="block-meta">Hidden</div>
+        </div>
+        <div id="card-price" class="card hidden" aria-live="polite">
+          <h3>Bitcoin Price</h3>
+          <div class="value" id="price-value">— <span class="unit">USD</span></div>
+          <div class="small" id="price-meta">Hidden</div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Settings">
+        <div class="controls">
+          <div class="toggle-row">
+            <label class="toggle" title="Show current time as a card">
+              <input type="checkbox" id="cb-time" />
+              <span>Current Time</span>
+            </label>
+            <label class="toggle" title="Show current Bitcoin block height (mempool.space)">
+              <input type="checkbox" id="cb-block" />
+              <span>Block Height</span>
+            </label>
+            <label class="toggle" title="Show current Bitcoin price (CoinGecko)">
+              <input type="checkbox" id="cb-price" />
+              <span>BTC Price</span>
+            </label>
+          </div>
+          <div>
+            <label for="tz-select" class="select-label">Timezone</label>
+            <select id="tz-select" class="timezone-select" aria-label="Timezone selector">
+              <option value="system" selected>System (Auto)</option>
+              <option value="America/New_York">America/New_York</option>
+              <option value="Europe/London">Europe/London</option>
+              <option value="Asia/Tokyo">Asia/Tokyo</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div style="margin-top: 18px; color: var(--muted); font-size: 12px; display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div>Data from <a href="https://mempool.space/" target="_blank" rel="noopener">mempool.space</a> and <a href="https://www.coingecko.com/" target="_blank" rel="noopener">CoinGecko</a>.</div>
+        <button id="dev-toggle-success" class="btn btn-secondary" title="Toggle success banner (developer)">Show/Hide temporary success message</button>
+      </div>
+    </div>
+
+    <div id="block-mined-overlay" aria-hidden="true">
+      <div class="overlay-inner">
+        <div class="overlay-text">Block Mined!</div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const TIME_FORMAT_HM = new Intl.DateTimeFormat(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+
+        // Removed tz-note usage since we no longer display it
+        const CLOCK_DISPLAY_FORMAT = (tz) => new Intl.DateTimeFormat(undefined, {
+          timeZone: tz,
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZoneName: "short",
+          hour12: false,
+        });
+
+        const dom = {
+          tzSelect: document.getElementById("tz-select"),
+          clock: document.getElementById("clock"),
+          tzNote: null,
+          cbBlock: document.getElementById("cb-block"),
+          cbPrice: document.getElementById("cb-price"),
+          cardBlock: document.getElementById("card-block"),
+          cardPrice: document.getElementById("card-price"),
+          blockValue: document.getElementById("block-value"),
+          blockMeta: document.getElementById("block-meta"),
+          priceValue: document.getElementById("price-value"),
+          priceMeta: document.getElementById("price-meta"),
+          // Time card
+          cbTime: document.getElementById("cb-time"),
+          cardTime: document.getElementById("card-time"),
+          timeValue: document.getElementById("time-value"),
+          timeMeta: document.getElementById("time-meta"),
+          // Timer
+          timerTime: document.getElementById("timer-time"),
+          blocksInput: document.getElementById("blocks-input"),
+          startPauseBtn: document.getElementById("timer-start-pause"),
+          resetBtn: document.getElementById("timer-reset"),
+          minedOverlay: document.getElementById("block-mined-overlay"),
+          timerMeta: document.getElementById("timer-meta"),
+          avgBlock: document.getElementById("avg-block"),
+          lastBlock: document.getElementById("last-block"),
+          sessionComplete: document.getElementById("session-complete"),
+          sessionCompleteText: document.getElementById("session-complete-text"),
+          sinceLastBlock: document.getElementById("since-last-block"),
+          cbStartNext: null,
+        };
+
+        let timeIntervalId = null;
+        let blockIntervalId = null;
+        let priceIntervalId = null;
+        let lastBlockPollIntervalId = null;
+        let lastKnownBlockHeight = null;
+        let lastBlockTimestampMs = null;
+
+        function getResolvedTimezone(selection) {
+          try {
+            if (selection === "system") {
+              const sysTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+              return sysTz || "America/Los_Angeles";
+            }
+            return selection || "America/Los_Angeles";
+          } catch (_) {
+            return "America/Los_Angeles";
+          }
+        }
+
+        function loadInitialPreferences() {
+          // Always follow the computer's timezone on load
+          dom.tzSelect.value = "system";
+          localStorage.setItem("selectedTimezone", "system");
+          const showBlock = localStorage.getItem("showBlock") === "1";
+          const showPrice = localStorage.getItem("showPrice") === "1";
+          const showTime = localStorage.getItem("showTime") === "1";
+          dom.cbBlock.checked = showBlock;
+          dom.cbPrice.checked = showPrice;
+          dom.cbTime.checked = showTime;
+        }
+
+        function formatTimeInSelectedTimezone(dateObj = new Date()) {
+          const tz = getResolvedTimezone(dom.tzSelect.value);
+          try {
+            return new Intl.DateTimeFormat(undefined, {
+              timeZone: tz,
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            }).format(dateObj);
+          } catch (_) {
+            return dateObj.toLocaleTimeString();
+          }
+        }
+
+        function savePreferences() {
+          localStorage.setItem("selectedTimezone", dom.tzSelect.value);
+          localStorage.setItem("showBlock", dom.cbBlock.checked ? "1" : "0");
+          localStorage.setItem("showPrice", dom.cbPrice.checked ? "1" : "0");
+          localStorage.setItem("showTime", dom.cbTime.checked ? "1" : "0");
+        }
+
+        function updateClockOnce() {
+          const selection = dom.tzSelect.value;
+          const now = new Date();
+          let resolvedTz = getResolvedTimezone(selection);
+          try {
+            if (typeof updateSinceLastBlockLabel === 'function') updateSinceLastBlockLabel();
+            if (dom.cardTime && !dom.cardTime.classList.contains('hidden')) updateTimeCardOnce();
+          } catch (_) {
+            // ignore
+          }
+        }
+
+        function startClock() {
+          if (timeIntervalId) clearInterval(timeIntervalId);
+          updateClockOnce();
+          timeIntervalId = setInterval(updateClockOnce, 1000);
+        }
+
+        function setTimeCard(enabled) {
+          if (enabled) {
+            dom.cardTime.classList.remove("hidden");
+            updateTimeCardOnce();
+          } else {
+            dom.cardTime.classList.add("hidden");
+          }
+        }
+
+        function updateTimeCardOnce() {
+          const selection = dom.tzSelect.value;
+          const now = new Date();
+          const resolvedTz = getResolvedTimezone(selection);
+          const fmt = new Intl.DateTimeFormat(undefined, {
+            timeZone: resolvedTz,
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          const value = fmt.format(now);
+          const meta = `Last updated ${formatTimeInSelectedTimezone(now)}`;
+          dom.timeValue.textContent = value;
+          dom.timeMeta.textContent = meta;
+          // The inline replacement was removed to avoid duplicate cards
+        }
+
+        async function fetchBlockHeightOnce() {
+          const endpoint = "https://mempool.space/api/blocks/tip/height";
+          dom.blockMeta.textContent = "Updating…";
+          try {
+            const response = await fetch(endpoint, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const height = await response.text();
+            const parsed = parseInt(height, 10);
+            if (Number.isFinite(parsed)) {
+              dom.blockValue.textContent = parsed.toLocaleString();
+              dom.blockMeta.textContent = `Last updated ${formatTimeInSelectedTimezone(new Date())}`;
+              // Detect new block and update last-block timestamp
+              if (lastKnownBlockHeight !== null && parsed > lastKnownBlockHeight) {
+                lastBlockTimestampMs = Date.now();
+              }
+              lastKnownBlockHeight = parsed;
+            } else {
+              throw new Error("Unexpected response");
+            }
+          } catch (error) {
+            dom.blockMeta.innerHTML = `<span class="error">Failed to fetch (${String(error)})</span>`;
+          }
+        }
+
+        async function fetchPriceOnce() {
+          const endpoint = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+          dom.priceMeta.textContent = "Updating…";
+          try {
+            const response = await fetch(endpoint, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const usd = data?.bitcoin?.usd;
+            if (typeof usd === "number") {
+              dom.priceValue.innerHTML = `${usd.toLocaleString(undefined, { maximumFractionDigits: 0 })} <span class="unit">USD</span>`;
+              dom.priceMeta.textContent = `Last updated ${formatTimeInSelectedTimezone(new Date())}`;
+            } else {
+              throw new Error("Unexpected response");
+            }
+          } catch (error) {
+            dom.priceMeta.innerHTML = `<span class="error">Failed to fetch (${String(error)})</span>`;
+          }
+        }
+
+        function setBlockPolling(enabled) {
+          if (enabled) {
+            dom.cardBlock.classList.remove("hidden");
+            fetchBlockHeightOnce();
+            if (blockIntervalId) clearInterval(blockIntervalId);
+            blockIntervalId = setInterval(fetchBlockHeightOnce, 30_000);
+            // Also fetch the most recent block to approximate the last-block time
+            fetchLastBlockTime();
+            if (lastBlockPollIntervalId) clearInterval(lastBlockPollIntervalId);
+            lastBlockPollIntervalId = setInterval(fetchLastBlockTime, 30_000);
+          } else {
+            dom.cardBlock.classList.add("hidden");
+            if (blockIntervalId) clearInterval(blockIntervalId);
+            blockIntervalId = null;
+            if (lastBlockPollIntervalId) clearInterval(lastBlockPollIntervalId);
+            lastBlockPollIntervalId = null;
+          }
+        }
+        async function fetchLastBlockTime() {
+          try {
+            // Get the latest block info; the first element is the tip
+            const res = await fetch("https://mempool.space/api/blocks", { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blocks = await res.json();
+            if (Array.isArray(blocks) && blocks.length > 0) {
+              const tip = blocks[0];
+              if (typeof tip?.timestamp === "number") {
+                const newTs = tip.timestamp * 1000;
+                const newHeight = tip.height;
+                const isNew = lastKnownBlockHeight !== null && newHeight > lastKnownBlockHeight;
+                lastBlockTimestampMs = newTs;
+                lastKnownBlockHeight = newHeight;
+              // Removed start-on-next-block behavior; always manual start
+                if (typeof updateSinceLastBlockLabel === 'function') updateSinceLastBlockLabel();
+                updateAverageBlockFromList(blocks);
+              }
+            }
+          } catch (_) {
+            // ignore
+          }
+        }
+
+        function setPricePolling(enabled) {
+          if (enabled) {
+            dom.cardPrice.classList.remove("hidden");
+            fetchPriceOnce();
+            if (priceIntervalId) clearInterval(priceIntervalId);
+            priceIntervalId = setInterval(fetchPriceOnce, 60_000);
+          } else {
+            dom.cardPrice.classList.add("hidden");
+            if (priceIntervalId) clearInterval(priceIntervalId);
+            priceIntervalId = null;
+          }
+        }
+
+        dom.tzSelect.addEventListener("change", () => {
+          updateClockOnce();
+          // Refresh time card and 'Last updated' timestamps when tz changes
+          if (dom.cardTime && !dom.cardTime.classList.contains('hidden')) updateTimeCardOnce();
+          if (!dom.cardBlock.classList.contains('hidden')) {
+            dom.blockMeta.textContent = `Last updated ${formatTimeInSelectedTimezone(new Date())}`;
+          }
+          if (!dom.cardPrice.classList.contains('hidden')) {
+            dom.priceMeta.textContent = `Last updated ${formatTimeInSelectedTimezone(new Date())}`;
+          }
+          savePreferences();
+        });
+        dom.cbBlock.addEventListener("change", () => {
+          setBlockPolling(dom.cbBlock.checked);
+          savePreferences();
+        });
+        dom.cbPrice.addEventListener("change", () => {
+          setPricePolling(dom.cbPrice.checked);
+          savePreferences();
+        });
+        dom.cbTime.addEventListener("change", () => {
+          setTimeCard(dom.cbTime.checked);
+          savePreferences();
+        });
+
+        loadInitialPreferences();
+        startClock();
+        // Always fetch block stats for the top-of-page metrics regardless of the Block Height card
+        fetchLastBlockTime();
+        setInterval(fetchLastBlockTime, 30_000);
+        // Card-specific polling
+        setBlockPolling(dom.cbBlock.checked);
+        setPricePolling(dom.cbPrice.checked);
+        setTimeCard(dom.cbTime?.checked);
+
+        // ----- Block Timer -----
+        const TEN_MINUTES_MS = 10 * 60 * 1000;
+        const blockTimerState = {
+          isRunning: false,
+          startEpochMs: null,
+          elapsedMs: 0,
+          targetMs: TEN_MINUTES_MS,
+          tickIntervalId: null,
+        };
+
+        function getBlocksCount() {
+          const num = parseInt(dom.blocksInput.value, 10);
+          return Number.isFinite(num) && num >= 1 ? Math.min(num, 5) : 1;
+        }
+
+        function formatDuration(ms) {
+          const clamped = Math.max(0, Math.floor(ms / 1000));
+          const seconds = clamped % 60;
+          const minutes = Math.floor(clamped / 60) % 60;
+          const hours = Math.floor(clamped / 3600);
+          if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+          }
+          return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function renderTimer() {
+          dom.timerTime.textContent = formatDuration(blockTimerState.elapsedMs);
+          updateTargetLabel();
+        }
+
+        function getElapsedSinceLastBlockMs() {
+          return lastBlockTimestampMs ? Math.max(0, Date.now() - lastBlockTimestampMs) : 0;
+        }
+
+        function computeEffectiveTargetMs() {
+          const blocks = getBlocksCount();
+          const fullBlocksMs = Math.max(0, blocks - 1) * TEN_MINUTES_MS;
+          if (lastBlockTimestampMs) {
+            const elapsedMs = getElapsedSinceLastBlockMs();
+            const partialMs = Math.max(60 * 1000, TEN_MINUTES_MS - Math.max(0, elapsedMs));
+            return fullBlocksMs + partialMs;
+          }
+          return blocks * TEN_MINUTES_MS;
+        }
+
+        function updateTargetLabel() {
+          const ms = blockTimerState.isRunning ? blockTimerState.targetMs : computeEffectiveTargetMs();
+          dom.timerMeta.textContent = `Estimated session length: ${formatDuration(ms)}`;
+        }
+
+        function updateSinceLastBlockLabel() {
+          if (lastBlockTimestampMs) {
+            const elapsedSinceBlock = Date.now() - lastBlockTimestampMs;
+            dom.sinceLastBlock.textContent = `Time since last block: ${formatDuration(elapsedSinceBlock)}`;
+          } else {
+            dom.sinceLastBlock.textContent = `Since last block: —`;
+          }
+          if (!blockTimerState.isRunning) updateTargetLabel();
+        }
+
+        function scheduleTick() {
+          if (blockTimerState.tickIntervalId) clearInterval(blockTimerState.tickIntervalId);
+          blockTimerState.tickIntervalId = setInterval(() => {
+            const now = Date.now();
+            blockTimerState.elapsedMs = Math.max(0, now - blockTimerState.startEpochMs);
+            renderTimer();
+          }, 250);
+        }
+
+        function startTimer() {
+          if (blockTimerState.isRunning) return;
+          blockTimerState.isRunning = true;
+          dom.blocksInput.disabled = true;
+          dom.resetBtn.disabled = false;
+          dom.startPauseBtn.textContent = "Pause";
+          // Start fresh at 0 and set target considering in-progress block if applicable
+          blockTimerState.elapsedMs = 0;
+          blockTimerState.targetMs = computeEffectiveTargetMs();
+          blockTimerState.startEpochMs = Date.now();
+          // Clear prior completion message
+          dom.sessionComplete.classList.add('hidden');
+          dom.sessionCompleteText.textContent = '';
+          beginSessionWatcher();
+          scheduleTick();
+        }
+
+        function pauseTimer(setPausedLabel = true) {
+          if (!blockTimerState.isRunning && setPausedLabel) return;
+          blockTimerState.isRunning = false;
+          dom.blocksInput.disabled = false;
+          if (blockTimerState.tickIntervalId) clearInterval(blockTimerState.tickIntervalId);
+          blockTimerState.tickIntervalId = null;
+          if (setPausedLabel) dom.startPauseBtn.textContent = "Start";
+          endSessionWatcher();
+        }
+
+        function resetTimer() {
+          pauseTimer();
+          blockTimerState.elapsedMs = 0;
+          blockTimerState.targetMs = computeEffectiveTargetMs();
+          dom.resetBtn.disabled = true;
+          renderTimer();
+        }
+
+        // ---- Real-block completion session watcher ----
+        const sessionState = {
+          isActive: false,
+          targetBlocks: 0,
+          startHeight: null,
+          lastSeenHeight: null,
+          blocksMined: 0,
+          pollIntervalId: null,
+        };
+
+        function beginSessionWatcher() {
+          sessionState.isActive = true;
+          sessionState.targetBlocks = getBlocksCount();
+          sessionState.startHeight = lastKnownBlockHeight;
+          sessionState.lastSeenHeight = lastKnownBlockHeight;
+          sessionState.blocksMined = 0;
+          if (sessionState.pollIntervalId) clearInterval(sessionState.pollIntervalId);
+          // Poll more frequently during an active session
+          sessionState.pollIntervalId = setInterval(pollTipHeightForSession, 15_000);
+          // Kick one immediate poll in case we lack height
+          pollTipHeightForSession();
+        }
+
+        function endSessionWatcher() {
+          sessionState.isActive = false;
+          if (sessionState.pollIntervalId) clearInterval(sessionState.pollIntervalId);
+          sessionState.pollIntervalId = null;
+        }
+
+        async function pollTipHeightForSession() {
+          try {
+            const res = await fetch("https://mempool.space/api/blocks/tip/height", { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const text = await res.text();
+            const currentHeight = parseInt(text, 10);
+            if (!Number.isFinite(currentHeight)) return;
+            if (sessionState.lastSeenHeight == null) {
+              sessionState.lastSeenHeight = currentHeight;
+              if (sessionState.startHeight == null) sessionState.startHeight = currentHeight;
+              return;
+            }
+            if (currentHeight > sessionState.lastSeenHeight) {
+              const delta = currentHeight - sessionState.lastSeenHeight;
+              sessionState.blocksMined += delta;
+              sessionState.lastSeenHeight = currentHeight;
+              const reached = sessionState.blocksMined >= sessionState.targetBlocks;
+              if (blockTimerState.isRunning) {
+                if (reached) {
+                  const finalBlocks = sessionState.targetBlocks;
+                  showOverlayMessage(`Congratulations, you worked for ${finalBlocks} ${finalBlocks === 1 ? 'block' : 'blocks'}!`, 1400, [90,40,90]);
+                } else {
+                  showOverlayMessage('Block Mined!', 1000, [60,30,60]);
+                }
+              }
+              if (reached) {
+                // Session complete on real blocks
+                pauseTimer(false);
+                dom.startPauseBtn.textContent = "Start";
+                dom.blocksInput.disabled = false;
+                dom.resetBtn.disabled = true;
+                endSessionWatcher();
+                // Persist a visible completion message
+                const blocks = sessionState.targetBlocks;
+                dom.sessionCompleteText.textContent = `Congratulations, you worked for ${blocks} ${blocks === 1 ? 'block' : 'blocks'}!`;
+                dom.sessionComplete.classList.remove('hidden');
+              }
+              // Refresh average using a short list
+              try {
+                const listRes = await fetch("https://mempool.space/api/blocks", { cache: "no-store" });
+                if (listRes.ok) {
+                  const blocks = await listRes.json();
+                  updateAverageBlockFromList(blocks);
+                }
+              } catch (_) {}
+            }
+          } catch (_) {
+            // ignore transient errors
+          }
+        }
+
+        function updateAverageBlockFromList(blocks) {
+          try {
+            if (!Array.isArray(blocks) || blocks.length < 2) return;
+            // Use up to last 10 intervals between consecutive blocks
+            const count = Math.min(10, blocks.length - 1);
+            const intervals = [];
+            for (let i = 0; i < count; i += 1) {
+              const a = blocks[i];
+              const b = blocks[i + 1];
+              if (a && b && typeof a.timestamp === 'number' && typeof b.timestamp === 'number') {
+                const dt = Math.abs(a.timestamp - b.timestamp) * 1000;
+                intervals.push(dt);
+              }
+            }
+            if (intervals.length === 0) return;
+            const avgMs = Math.round(intervals.reduce((s, v) => s + v, 0) / intervals.length);
+            dom.avgBlock.textContent = `Average block (last ${intervals.length}): ${formatDuration(avgMs)}`;
+            const lastMs = intervals[0];
+            if (Number.isFinite(lastMs)) {
+              dom.lastBlock.textContent = `Last block: ${formatDuration(lastMs)}`;
+            }
+          } catch (_) {}
+        }
+
+        function showOverlayMessage(message, durationMs = 1000, vibratePattern = [60, 30, 60]) {
+          try {
+            const textNode = document.querySelector('#block-mined-overlay .overlay-text');
+            if (textNode) textNode.textContent = message;
+          } catch (_) {}
+          dom.minedOverlay.classList.add("show");
+          if (navigator.vibrate && Array.isArray(vibratePattern)) {
+            try { navigator.vibrate(vibratePattern); } catch (_) {}
+          }
+          setTimeout(() => {
+            dom.minedOverlay.classList.remove("show");
+          }, durationMs);
+        }
+
+        dom.blocksInput.addEventListener("change", () => {
+          // Update target dynamically when idle; while running, keep current session target
+          if (!blockTimerState.isRunning) {
+            blockTimerState.targetMs = computeEffectiveTargetMs();
+            renderTimer();
+          } else {
+            updateTargetLabel();
+          }
+        });
+
+        // Permanent scroll/step buttons for blocks
+        document.getElementById('blocks-increment').addEventListener('click', () => {
+          const current = getBlocksCount();
+          dom.blocksInput.value = String(Math.min(5, current + 1));
+          dom.blocksInput.dispatchEvent(new Event('change'));
+        });
+        document.getElementById('blocks-decrement').addEventListener('click', () => {
+          const current = getBlocksCount();
+          dom.blocksInput.value = String(Math.max(1, current - 1));
+          dom.blocksInput.dispatchEvent(new Event('change'));
+        });
+
+        function updateBlocksButtonsDisabled() {
+          const current = getBlocksCount();
+          const inc = document.getElementById('blocks-increment');
+          const dec = document.getElementById('blocks-decrement');
+          if (inc) {
+            inc.disabled = current >= 5;
+            inc.title = current >= 5 ? 'Maximum 5 blocks' : 'Increase blocks';
+          }
+          if (dec) {
+            dec.disabled = current <= 1;
+            dec.title = current <= 1 ? 'Minimum 1 block' : 'Decrease blocks';
+          }
+        }
+
+        dom.blocksInput.addEventListener('input', updateBlocksButtonsDisabled);
+        dom.blocksInput.addEventListener('change', updateBlocksButtonsDisabled);
+        updateBlocksButtonsDisabled();
+        dom.startPauseBtn.addEventListener("click", () => {
+          if (blockTimerState.isRunning) {
+            pauseTimer();
+          } else {
+            startTimer();
+          }
+        });
+        dom.resetBtn.addEventListener("click", () => resetTimer());
+
+        // Developer toggle for success banner
+        const devToggle = document.getElementById('dev-toggle-success');
+        if (devToggle) {
+          devToggle.addEventListener('click', () => {
+            const hidden = dom.sessionComplete.classList.contains('hidden');
+            if (hidden) {
+              dom.sessionCompleteText.textContent = 'Congratulations, you worked for 1 block!';
+              dom.sessionComplete.classList.remove('hidden');
+            } else {
+              dom.sessionComplete.classList.add('hidden');
+            }
+          });
+        }
+
+        // Initialize timer UI
+        blockTimerState.elapsedMs = 0;
+        blockTimerState.targetMs = getBlocksCount() * TEN_MINUTES_MS;
+        renderTimer();
+      })();
+    </script>
+  </body>
+  </html>
+
+
