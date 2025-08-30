@@ -103,7 +103,6 @@
         border-radius: 10px;
         padding: 12px 14px;
         font-size: 14px;
-        font-family: "Orbitron", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
         outline: none;
       }
       .timezone-select:focus { border-color: var(--bitcoin-orange); box-shadow: 0 0 0 2px #f2a90033; }
@@ -201,15 +200,6 @@
         outline: none;
       }
       .blocks-input:disabled { opacity: 0.6; }
-      /* Hide browser default number input spinners */
-      .blocks-input::-webkit-outer-spin-button,
-      .blocks-input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      .blocks-input[type=number] {
-        -moz-appearance: textfield;
-      }
       .btn {
         appearance: none;
         border: 1px solid var(--bitcoin-orange);
@@ -316,48 +306,25 @@
 
       <section class="panel timer-panel" aria-label="Session timer">
         <div id="card-timer" class="card" aria-live="polite" style="border-color: var(--bitcoin-orange); box-shadow: 0 0 0 2px #f2a90022, inset 0 0 24px rgba(242,169,0,0.08);">
-                      <h3 style="text-align:center;">Session Timer</h3>
-          <div class="timer-time" id="timer-time" style="text-align:center;">00:00</div>
+          <h3>Session Timer</h3>
+          <div class="timer-time" id="timer-time">00:00</div>
           <div id="session-complete" class="success-banner hidden"><span class="emoji">🎉</span> <span id="session-complete-text"></span></div>
-          
-          <div style="display:flex; gap:10px; justify-content:center; margin:16px 0;">
-            <button id="timer-start-pause" class="btn">Start</button>
-            <button id="timer-reset" class="btn btn-secondary" disabled>Reset</button>
-          </div>
-          
           <div class="timer-controls">
-            <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
-              <label for="timing-mode-select" class="select-label" style="width:80px; text-align:left;">Mode:</label>
-              <select id="timing-mode-select" class="timezone-select" style="width: auto; min-width: 140px;" aria-label="Timing mode selector">
-                <option value="block" selected>Block-based</option>
-                <option value="minute">Minute-based</option>
-              </select>
-            </div>
-          </div>
-          
-          <div id="block-timing-controls" style="margin-bottom:12px;">
+            <label for="blocks-input" class="select-label" style="margin-right:2px;">Blocks to mine:</label>
             <div style="display:flex; align-items:center; gap:6px;">
-              <label for="blocks-input" class="select-label" style="width:80px; text-align:left;">Blocks to mine:</label>
               <button id="blocks-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease blocks to mine" title="Decrease blocks to mine">−</button>
-                              <input id="blocks-input" class="blocks-input" type="number" min="1" max="10" step="1" value="1" />
+              <input id="blocks-input" class="blocks-input" type="number" min="1" max="5" step="1" value="1" />
               <button id="blocks-increment" class="btn btn-secondary btn-icon" aria-label="Increase blocks to mine" title="Increase blocks to mine">+</button>
             </div>
-            <div class="small" id="timer-meta">Estimated session duration: 10:00</div>
-          </div>
-          
-          <div id="minute-timing-controls" style="display:none; margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label for="minutes-input" class="select-label" style="width:80px; text-align:left;">Minutes to work:</label>
-              <button id="minutes-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease minutes by 10" title="Decrease minutes by 10">−</button>
-              <input id="minutes-input" class="blocks-input" type="number" min="10" max="180" step="10" value="10" />
-              <button id="minutes-increment" class="btn btn-secondary btn-icon" aria-label="Increase minutes by 10" title="Increase minutes by 10">+</button>
-            </div>
+            <button id="timer-start-pause" class="btn">Start</button>
+            <button id="timer-reset" class="btn btn-secondary" disabled>Reset</button>
           </div>
           <div class="timer-controls" style="margin-top:10px; justify-content: flex-start; align-items: center;">
             <div class="small" id="since-last-block">Time since last block: —</div>
           </div>
-          <div class="small" id="last-block">Last block duration: —</div>
-          <div class="small" id="avg-block">Average block duration (last 10): —</div>
+          <div class="small" id="last-block">Last block: —</div>
+          <div class="small" id="avg-block">Average block (last 10): —</div>
+          <div class="small" id="timer-meta">Estimated session length: 10:00</div>
           
         </div>
       </section>
@@ -467,14 +434,6 @@
           sessionCompleteText: document.getElementById("session-complete-text"),
           sinceLastBlock: document.getElementById("since-last-block"),
           cbStartNext: null,
-          timingModeSelect: document.getElementById("timing-mode-select"),
-          blockTimingControls: document.getElementById("block-timing-controls"),
-          minuteTimingControls: document.getElementById("minute-timing-controls"),
-          minutesInput: document.getElementById("minutes-input"),
-          minutesIncrement: document.getElementById("minutes-increment"),
-          minutesDecrement: document.getElementById("minutes-decrement"),
-          blocksIncrement: document.getElementById("blocks-increment"),
-          blocksDecrement: document.getElementById("blocks-decrement"),
         };
 
         let timeIntervalId = null;
@@ -506,17 +465,6 @@
           dom.cbBlock.checked = showBlock;
           dom.cbPrice.checked = showPrice;
           dom.cbTime.checked = showTime;
-          const timingMode = localStorage.getItem("timingMode") || "block"; // Default to block-based
-          dom.timingModeSelect.value = timingMode;
-          dom.blocksInput.value = localStorage.getItem("blocksToMine") || "1";
-          dom.minutesInput.value = localStorage.getItem("minutesToWork") || "10";
-          if (timingMode === "block") {
-            dom.blockTimingControls.style.display = "block";
-            dom.minuteTimingControls.style.display = "none";
-          } else {
-            dom.blockTimingControls.style.display = "none";
-            dom.minuteTimingControls.style.display = "block";
-          }
         }
 
         function formatTimeInSelectedTimezone(dateObj = new Date()) {
@@ -539,9 +487,6 @@
           localStorage.setItem("showBlock", dom.cbBlock.checked ? "1" : "0");
           localStorage.setItem("showPrice", dom.cbPrice.checked ? "1" : "0");
           localStorage.setItem("showTime", dom.cbTime.checked ? "1" : "0");
-          localStorage.setItem("timingMode", dom.timingModeSelect.value);
-          localStorage.setItem("blocksToMine", dom.blocksInput.value);
-          localStorage.setItem("minutesToWork", dom.minutesInput.value);
         }
 
         function updateClockOnce() {
@@ -710,29 +655,6 @@
           setTimeCard(dom.cbTime.checked);
           savePreferences();
         });
-        
-        dom.timingModeSelect.addEventListener("change", () => {
-          const timingMode = dom.timingModeSelect.value;
-          const useBlockTiming = timingMode === "block";
-          dom.blockTimingControls.style.display = useBlockTiming ? "block" : "none";
-          dom.minuteTimingControls.style.display = useBlockTiming ? "none" : "block";
-          
-          // Reset to defaults when switching modes
-          if (useBlockTiming) {
-            dom.blocksInput.value = "1";
-          } else {
-            dom.minutesInput.value = "10";
-          }
-          
-          // Update target when switching modes
-          if (!blockTimerState.isRunning) {
-            blockTimerState.targetMs = computeEffectiveTargetMs();
-            renderTimer();
-          } else {
-            updateTargetLabel();
-          }
-          savePreferences();
-        });
 
         loadInitialPreferences();
         startClock();
@@ -756,34 +678,7 @@
 
         function getBlocksCount() {
           const num = parseInt(dom.blocksInput.value, 10);
-          return Number.isFinite(num) && num >= 1 ? Math.min(num, 10) : 1;
-        }
-
-        function getMinutesCount() {
-          // Check if we have a stored actual value (for formatted display)
-          const actualValue = dom.minutesInput.getAttribute('data-actual-value');
-          if (actualValue) {
-            const num = parseInt(actualValue, 10);
-            return Number.isFinite(num) && num >= 10 ? Math.min(num, 180) : 10;
-          }
-          
-          // Otherwise parse the input value directly
-          const num = parseInt(dom.minutesInput.value, 10);
-          return Number.isFinite(num) && num >= 10 ? Math.min(num, 180) : 10;
-        }
-
-        function formatMinutesDisplay(minutes) {
-          if (minutes < 60) {
-            return `${minutes} min`;
-          } else {
-            const hours = Math.floor(minutes / 60);
-            const remainingMinutes = minutes % 60;
-            if (remainingMinutes === 0) {
-              return `${hours}h`;
-            } else {
-              return `${hours}h ${remainingMinutes}m`;
-            }
-          }
+          return Number.isFinite(num) && num >= 1 ? Math.min(num, 5) : 1;
         }
 
         function formatDuration(ms) {
@@ -807,33 +702,19 @@
         }
 
         function computeEffectiveTargetMs() {
-          const timingMode = dom.timingModeSelect.value;
-          const useBlockTiming = timingMode === "block";
-          if (useBlockTiming) {
-            const blocks = getBlocksCount();
-            const fullBlocksMs = Math.max(0, blocks - 1) * TEN_MINUTES_MS;
-            if (lastBlockTimestampMs) {
-              const elapsedMs = getElapsedSinceLastBlockMs();
-              const partialMs = Math.max(60 * 1000, TEN_MINUTES_MS - Math.max(0, elapsedMs));
-              return fullBlocksMs + partialMs;
-            }
-            return blocks * TEN_MINUTES_MS;
-          } else {
-            const minutes = getMinutesCount();
-            return minutes * 60 * 1000;
+          const blocks = getBlocksCount();
+          const fullBlocksMs = Math.max(0, blocks - 1) * TEN_MINUTES_MS;
+          if (lastBlockTimestampMs) {
+            const elapsedMs = getElapsedSinceLastBlockMs();
+            const partialMs = Math.max(60 * 1000, TEN_MINUTES_MS - Math.max(0, elapsedMs));
+            return fullBlocksMs + partialMs;
           }
+          return blocks * TEN_MINUTES_MS;
         }
 
         function updateTargetLabel() {
-          const timingMode = dom.timingModeSelect.value;
-          const useBlockTiming = timingMode === "block";
-          if (useBlockTiming) {
-            const ms = blockTimerState.isRunning ? blockTimerState.targetMs : computeEffectiveTargetMs();
-            dom.timerMeta.textContent = `Estimated session duration: ${formatDuration(ms)}`;
-            dom.timerMeta.style.display = "block";
-          } else {
-            dom.timerMeta.style.display = "none";
-          }
+          const ms = blockTimerState.isRunning ? blockTimerState.targetMs : computeEffectiveTargetMs();
+          dom.timerMeta.textContent = `Estimated session length: ${formatDuration(ms)}`;
         }
 
         function updateSinceLastBlockLabel() {
@@ -852,58 +733,13 @@
             const now = Date.now();
             blockTimerState.elapsedMs = Math.max(0, now - blockTimerState.startEpochMs);
             renderTimer();
-            
-            // Check for minute-based completion
-            const timingMode = dom.timingModeSelect.value;
-            const useBlockTiming = timingMode === "block";
-            if (!useBlockTiming && blockTimerState.elapsedMs >= blockTimerState.targetMs) {
-              // Minute-based session complete
-              pauseTimer(false);
-              dom.startPauseBtn.textContent = "Start";
-              dom.blocksInput.disabled = false;
-              dom.minutesInput.disabled = false;
-              dom.resetBtn.disabled = true;
-              // Re-enable all increment/decrement buttons
-              dom.blocksIncrement.disabled = false;
-              dom.blocksDecrement.disabled = false;
-              dom.minutesIncrement.disabled = false;
-              dom.minutesDecrement.disabled = false;
-              // Re-enable mode selector
-              dom.timingModeSelect.disabled = false;
-              endSessionWatcher();
-              
-              const minutes = getMinutesCount();
-              const blocksMined = sessionState.blocksMined;
-              dom.sessionCompleteText.textContent = `Congratulations, you worked for ${minutes} minutes and ${blocksMined} ${blocksMined === 1 ? 'block' : 'blocks'} were closed!`;
-              dom.sessionComplete.classList.remove('hidden');
-            }
           }, 250);
         }
 
         function startTimer() {
           if (blockTimerState.isRunning) return;
           blockTimerState.isRunning = true;
-          const timingMode = dom.timingModeSelect.value;
-          const useBlockTiming = timingMode === "block";
-          // Disable mode selector when timer is running
-          dom.timingModeSelect.disabled = true;
-          if (useBlockTiming) {
-            dom.blocksInput.disabled = true;
-            dom.minutesInput.disabled = false;
-            // Disable block increment/decrement buttons
-            dom.blocksIncrement.disabled = true;
-            dom.blocksDecrement.disabled = true;
-            dom.minutesIncrement.disabled = false;
-            dom.minutesDecrement.disabled = false;
-          } else {
-            dom.blocksInput.disabled = false;
-            dom.minutesInput.disabled = true;
-            // Disable minute increment/decrement buttons
-            dom.blocksIncrement.disabled = false;
-            dom.blocksDecrement.disabled = false;
-            dom.minutesIncrement.disabled = true;
-            dom.minutesDecrement.disabled = true;
-          }
+          dom.blocksInput.disabled = true;
           dom.resetBtn.disabled = false;
           dom.startPauseBtn.textContent = "Pause";
           // Start fresh at 0 and set target considering in-progress block if applicable
@@ -920,15 +756,7 @@
         function pauseTimer(setPausedLabel = true) {
           if (!blockTimerState.isRunning && setPausedLabel) return;
           blockTimerState.isRunning = false;
-          // Re-enable mode selector when timer is paused
-          dom.timingModeSelect.disabled = false;
           dom.blocksInput.disabled = false;
-          dom.minutesInput.disabled = false;
-          // Re-enable all increment/decrement buttons
-          dom.blocksIncrement.disabled = false;
-          dom.blocksDecrement.disabled = false;
-          dom.minutesIncrement.disabled = false;
-          dom.minutesDecrement.disabled = false;
           if (blockTimerState.tickIntervalId) clearInterval(blockTimerState.tickIntervalId);
           blockTimerState.tickIntervalId = null;
           if (setPausedLabel) dom.startPauseBtn.textContent = "Start";
@@ -955,27 +783,15 @@
 
         function beginSessionWatcher() {
           sessionState.isActive = true;
-          const timingMode = dom.timingModeSelect.value;
-          const useBlockTiming = timingMode === "block";
-          if (useBlockTiming) {
-            sessionState.targetBlocks = getBlocksCount();
-            sessionState.startHeight = lastKnownBlockHeight;
-            sessionState.lastSeenHeight = lastKnownBlockHeight;
-            sessionState.blocksMined = 0;
-            if (sessionState.pollIntervalId) clearInterval(sessionState.pollIntervalId);
-            // Poll more frequently during an active session
-            sessionState.pollIntervalId = setInterval(pollTipHeightForSession, 15_000);
-            // Kick one immediate poll in case we lack height
-            pollTipHeightForSession();
-          } else {
-            // For minute-based timing, we don't need to poll for blocks
-            sessionState.targetBlocks = 0;
-            sessionState.startHeight = null;
-            sessionState.lastSeenHeight = null;
-            sessionState.blocksMined = 0;
-            if (sessionState.pollIntervalId) clearInterval(sessionState.pollIntervalId);
-            sessionState.pollIntervalId = null;
-          }
+          sessionState.targetBlocks = getBlocksCount();
+          sessionState.startHeight = lastKnownBlockHeight;
+          sessionState.lastSeenHeight = lastKnownBlockHeight;
+          sessionState.blocksMined = 0;
+          if (sessionState.pollIntervalId) clearInterval(sessionState.pollIntervalId);
+          // Poll more frequently during an active session
+          sessionState.pollIntervalId = setInterval(pollTipHeightForSession, 15_000);
+          // Kick one immediate poll in case we lack height
+          pollTipHeightForSession();
         }
 
         function endSessionWatcher() {
@@ -1000,45 +816,26 @@
               const delta = currentHeight - sessionState.lastSeenHeight;
               sessionState.blocksMined += delta;
               sessionState.lastSeenHeight = currentHeight;
-              const timingMode = dom.timingModeSelect.value;
-              const useBlockTiming = timingMode === "block";
-              if (useBlockTiming) {
-                const reached = sessionState.blocksMined >= sessionState.targetBlocks;
-                if (blockTimerState.isRunning) {
-                  if (reached) {
-                    const finalBlocks = sessionState.targetBlocks;
-                    const elapsedMinutes = Math.floor(blockTimerState.elapsedMs / (60 * 1000));
-                    showOverlayMessage(`Congratulations, you worked for ${elapsedMinutes} minutes and ${finalBlocks} ${finalBlocks === 1 ? 'block' : 'blocks'} were closed!`, 1400, [90,40,90]);
-                  } else {
-                    showOverlayMessage('Block Mined!', 1000, [60,30,60]);
-                  }
-                }
+              const reached = sessionState.blocksMined >= sessionState.targetBlocks;
+              if (blockTimerState.isRunning) {
                 if (reached) {
-                  // Session complete on real blocks
-                  pauseTimer(false);
-                  dom.startPauseBtn.textContent = "Start";
-                  dom.blocksInput.disabled = false;
-                  dom.minutesInput.disabled = false;
-                  dom.resetBtn.disabled = true;
-                  // Re-enable all increment/decrement buttons
-                  dom.blocksIncrement.disabled = false;
-                  dom.blocksDecrement.disabled = false;
-                  dom.minutesIncrement.disabled = false;
-                  dom.minutesDecrement.disabled = false;
-                  // Re-enable mode selector
-                  dom.timingModeSelect.disabled = false;
-                  endSessionWatcher();
-                  // Persist a visible completion message
-                  const blocks = sessionState.targetBlocks;
-                  const elapsedMinutes = Math.floor(blockTimerState.elapsedMs / (60 * 1000));
-                  dom.sessionCompleteText.textContent = `Congratulations, you worked for ${elapsedMinutes} minutes and ${blocks} ${blocks === 1 ? 'block' : 'blocks'} were closed!`;
-                  dom.sessionComplete.classList.remove('hidden');
-                }
-              } else {
-                // In minute-based mode, just show block mined notification
-                if (blockTimerState.isRunning) {
+                  const finalBlocks = sessionState.targetBlocks;
+                  showOverlayMessage(`Congratulations, you worked for ${finalBlocks} ${finalBlocks === 1 ? 'block' : 'blocks'}!`, 1400, [90,40,90]);
+                } else {
                   showOverlayMessage('Block Mined!', 1000, [60,30,60]);
                 }
+              }
+              if (reached) {
+                // Session complete on real blocks
+                pauseTimer(false);
+                dom.startPauseBtn.textContent = "Start";
+                dom.blocksInput.disabled = false;
+                dom.resetBtn.disabled = true;
+                endSessionWatcher();
+                // Persist a visible completion message
+                const blocks = sessionState.targetBlocks;
+                dom.sessionCompleteText.textContent = `Congratulations, you worked for ${blocks} ${blocks === 1 ? 'block' : 'blocks'}!`;
+                dom.sessionComplete.classList.remove('hidden');
               }
               // Refresh average using a short list
               try {
@@ -1070,11 +867,11 @@
             }
             if (intervals.length === 0) return;
             const avgMs = Math.round(intervals.reduce((s, v) => s + v, 0) / intervals.length);
-                         dom.avgBlock.textContent = `Average block duration (last ${intervals.length}): ${formatDuration(avgMs)}`;
+            dom.avgBlock.textContent = `Average block (last ${intervals.length}): ${formatDuration(avgMs)}`;
             const lastMs = intervals[0];
-                         if (Number.isFinite(lastMs)) {
-               dom.lastBlock.textContent = `Last block duration: ${formatDuration(lastMs)}`;
-             }
+            if (Number.isFinite(lastMs)) {
+              dom.lastBlock.textContent = `Last block: ${formatDuration(lastMs)}`;
+            }
           } catch (_) {}
         }
 
@@ -1102,20 +899,10 @@
           }
         });
 
-        dom.minutesInput.addEventListener("change", () => {
-          // Update target dynamically when idle; while running, keep current session target
-          if (!blockTimerState.isRunning) {
-            blockTimerState.targetMs = computeEffectiveTargetMs();
-            renderTimer();
-          } else {
-            updateTargetLabel();
-          }
-        });
-
         // Permanent scroll/step buttons for blocks
         document.getElementById('blocks-increment').addEventListener('click', () => {
           const current = getBlocksCount();
-          dom.blocksInput.value = String(Math.min(10, current + 1));
+          dom.blocksInput.value = String(Math.min(5, current + 1));
           dom.blocksInput.dispatchEvent(new Event('change'));
         });
         document.getElementById('blocks-decrement').addEventListener('click', () => {
@@ -1124,69 +911,13 @@
           dom.blocksInput.dispatchEvent(new Event('change'));
         });
 
-        const minutesIncrementBtn = document.getElementById('minutes-increment');
-        if (minutesIncrementBtn) {
-          console.log('Found minutes increment button, attaching listener');
-          minutesIncrementBtn.addEventListener('click', () => {
-            console.log('Increment button clicked!');
-            const current = getMinutesCount();
-            const newValue = Math.min(180, current + 10);
-            dom.minutesInput.setAttribute('data-actual-value', newValue);
-            // Update display immediately
-            updateMinutesDisplay();
-            dom.minutesInput.dispatchEvent(new Event('change'));
-          });
-        } else {
-          console.error('Minutes increment button not found!');
-        }
-        const minutesDecrementBtn = document.getElementById('minutes-decrement');
-        if (minutesDecrementBtn) {
-          console.log('Found minutes decrement button, attaching listener');
-          minutesDecrementBtn.addEventListener('click', () => {
-            console.log('Decrement button clicked!');
-            const current = getMinutesCount();
-            const newValue = Math.max(10, current - 10);
-            dom.minutesInput.setAttribute('data-actual-value', newValue);
-            // Update display immediately
-            updateMinutesDisplay();
-            dom.minutesInput.dispatchEvent(new Event('change'));
-          });
-        } else {
-          console.error('Minutes decrement button not found!');
-        }
-
-        function updateMinutesDisplay() {
-          // Get the actual value from data attribute or input
-          const actualValue = dom.minutesInput.getAttribute('data-actual-value');
-          let minutes;
-          if (actualValue) {
-            minutes = parseInt(actualValue, 10);
-          } else {
-            minutes = parseInt(dom.minutesInput.value, 10);
-          }
-          // Ensure we have a valid number
-          if (!Number.isFinite(minutes) || minutes < 10) {
-            minutes = 10;
-          }
-          
-          // Always keep the input value as a number for the HTML input field
-          dom.minutesInput.value = String(minutes);
-          
-          // Reset to normal display for all values
-          dom.minutesInput.removeAttribute('data-actual-value');
-          dom.minutesInput.placeholder = '';
-          dom.minutesInput.style.color = 'var(--text)';
-          dom.minutesInput.style.caretColor = 'var(--text)';
-          dom.minutesInput.style.backgroundColor = '';
-        }
-
         function updateBlocksButtonsDisabled() {
           const current = getBlocksCount();
           const inc = document.getElementById('blocks-increment');
           const dec = document.getElementById('blocks-decrement');
           if (inc) {
-            inc.disabled = current >= 10;
-            inc.title = current >= 10 ? 'Maximum 10 blocks' : 'Increase blocks';
+            inc.disabled = current >= 5;
+            inc.title = current >= 5 ? 'Maximum 5 blocks' : 'Increase blocks';
           }
           if (dec) {
             dec.disabled = current <= 1;
@@ -1194,31 +925,9 @@
           }
         }
 
-        function updateMinutesButtonsDisabled() {
-          const current = getMinutesCount();
-          const inc = document.getElementById('minutes-increment');
-          const dec = document.getElementById('minutes-decrement');
-          if (inc) {
-            inc.disabled = current >= 180;
-            inc.title = current >= 180 ? 'Maximum 180 minutes' : 'Increase minutes by 10';
-          }
-          if (dec) {
-            dec.disabled = current <= 10;
-            dec.title = current <= 10 ? 'Minimum 10 minutes' : 'Decrease minutes by 10';
-          }
-        }
-
         dom.blocksInput.addEventListener('input', updateBlocksButtonsDisabled);
         dom.blocksInput.addEventListener('change', updateBlocksButtonsDisabled);
         updateBlocksButtonsDisabled();
-        dom.minutesInput.addEventListener('input', updateMinutesButtonsDisabled);
-        dom.minutesInput.addEventListener('change', updateMinutesButtonsDisabled);
-        dom.minutesInput.addEventListener('input', updateMinutesDisplay);
-        updateMinutesButtonsDisabled();
-        updateMinutesDisplay(); // Initialize the display
-        
-        console.log('Event listeners attached. Minutes input element:', dom.minutesInput);
-        console.log('Minutes increment button:', document.getElementById('minutes-increment'));
         dom.startPauseBtn.addEventListener("click", () => {
           if (blockTimerState.isRunning) {
             pauseTimer();
@@ -1233,10 +942,10 @@
         if (devToggle) {
           devToggle.addEventListener('click', () => {
             const hidden = dom.sessionComplete.classList.contains('hidden');
-                         if (hidden) {
-               dom.sessionCompleteText.textContent = 'Congratulations, you worked for 10 minutes and 1 block was closed!';
-               dom.sessionComplete.classList.remove('hidden');
-             } else {
+            if (hidden) {
+              dom.sessionCompleteText.textContent = 'Congratulations, you worked for 1 block!';
+              dom.sessionComplete.classList.remove('hidden');
+            } else {
               dom.sessionComplete.classList.add('hidden');
             }
           });
@@ -1244,11 +953,8 @@
 
         // Initialize timer UI
         blockTimerState.elapsedMs = 0;
-        blockTimerState.targetMs = computeEffectiveTargetMs();
+        blockTimerState.targetMs = getBlocksCount() * TEN_MINUTES_MS;
         renderTimer();
-        
-        // Test console logging
-        console.log('BLOCKADORO initialized successfully');
       })();
     </script>
   </body>

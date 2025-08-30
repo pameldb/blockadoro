@@ -333,24 +333,22 @@
                 <option value="minute">Minute-based</option>
               </select>
             </div>
-          </div>
-          
-          <div id="block-timing-controls" style="margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label for="blocks-input" class="select-label" style="width:80px; text-align:left;">Blocks to mine:</label>
-              <button id="blocks-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease blocks to mine" title="Decrease blocks to mine">−</button>
-                              <input id="blocks-input" class="blocks-input" type="number" min="1" max="10" step="1" value="1" />
-              <button id="blocks-increment" class="btn btn-secondary btn-icon" aria-label="Increase blocks to mine" title="Increase blocks to mine">+</button>
+            <div id="block-timing-controls" style="margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label for="blocks-input" class="select-label" style="width:80px; text-align:left;">Blocks to mine:</label>
+                <button id="blocks-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease blocks to mine" title="Decrease blocks to mine">−</button>
+                <input id="blocks-input" class="blocks-input" type="number" min="1" max="5" step="1" value="1" />
+                <button id="blocks-increment" class="btn btn-secondary btn-icon" aria-label="Increase blocks to mine" title="Increase blocks to mine">+</button>
+              </div>
+              <div class="small" id="timer-meta" style="margin-left:80px;">Estimated session duration: 10:00</div>
             </div>
-            <div class="small" id="timer-meta">Estimated session duration: 10:00</div>
-          </div>
-          
-          <div id="minute-timing-controls" style="display:none; margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label for="minutes-input" class="select-label" style="width:80px; text-align:left;">Minutes to work:</label>
-              <button id="minutes-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease minutes by 10" title="Decrease minutes by 10">−</button>
-              <input id="minutes-input" class="blocks-input" type="number" min="10" max="180" step="10" value="10" />
-              <button id="minutes-increment" class="btn btn-secondary btn-icon" aria-label="Increase minutes by 10" title="Increase minutes by 10">+</button>
+            <div id="minute-timing-controls" style="display:none; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label for="minutes-input" class="select-label" style="width:80px; text-align:left;">Minutes to work:</label>
+                <button id="minutes-decrement" class="btn btn-secondary btn-icon" aria-label="Decrease minutes by 10" title="Decrease minutes by 10">−</button>
+                <input id="minutes-input" class="blocks-input" type="number" min="10" max="180" step="10" value="10" />
+                <button id="minutes-increment" class="btn btn-secondary btn-icon" aria-label="Increase minutes by 10" title="Increase minutes by 10">+</button>
+              </div>
             </div>
           </div>
           <div class="timer-controls" style="margin-top:10px; justify-content: flex-start; align-items: center;">
@@ -756,34 +754,12 @@
 
         function getBlocksCount() {
           const num = parseInt(dom.blocksInput.value, 10);
-          return Number.isFinite(num) && num >= 1 ? Math.min(num, 10) : 1;
+          return Number.isFinite(num) && num >= 1 ? Math.min(num, 5) : 1;
         }
 
         function getMinutesCount() {
-          // Check if we have a stored actual value (for formatted display)
-          const actualValue = dom.minutesInput.getAttribute('data-actual-value');
-          if (actualValue) {
-            const num = parseInt(actualValue, 10);
-            return Number.isFinite(num) && num >= 10 ? Math.min(num, 180) : 10;
-          }
-          
-          // Otherwise parse the input value directly
           const num = parseInt(dom.minutesInput.value, 10);
           return Number.isFinite(num) && num >= 10 ? Math.min(num, 180) : 10;
-        }
-
-        function formatMinutesDisplay(minutes) {
-          if (minutes < 60) {
-            return `${minutes} min`;
-          } else {
-            const hours = Math.floor(minutes / 60);
-            const remainingMinutes = minutes % 60;
-            if (remainingMinutes === 0) {
-              return `${hours}h`;
-            } else {
-              return `${hours}h ${remainingMinutes}m`;
-            }
-          }
         }
 
         function formatDuration(ms) {
@@ -1115,7 +1091,7 @@
         // Permanent scroll/step buttons for blocks
         document.getElementById('blocks-increment').addEventListener('click', () => {
           const current = getBlocksCount();
-          dom.blocksInput.value = String(Math.min(10, current + 1));
+          dom.blocksInput.value = String(Math.min(5, current + 1));
           dom.blocksInput.dispatchEvent(new Event('change'));
         });
         document.getElementById('blocks-decrement').addEventListener('click', () => {
@@ -1124,69 +1100,24 @@
           dom.blocksInput.dispatchEvent(new Event('change'));
         });
 
-        const minutesIncrementBtn = document.getElementById('minutes-increment');
-        if (minutesIncrementBtn) {
-          console.log('Found minutes increment button, attaching listener');
-          minutesIncrementBtn.addEventListener('click', () => {
-            console.log('Increment button clicked!');
-            const current = getMinutesCount();
-            const newValue = Math.min(180, current + 10);
-            dom.minutesInput.setAttribute('data-actual-value', newValue);
-            // Update display immediately
-            updateMinutesDisplay();
-            dom.minutesInput.dispatchEvent(new Event('change'));
-          });
-        } else {
-          console.error('Minutes increment button not found!');
-        }
-        const minutesDecrementBtn = document.getElementById('minutes-decrement');
-        if (minutesDecrementBtn) {
-          console.log('Found minutes decrement button, attaching listener');
-          minutesDecrementBtn.addEventListener('click', () => {
-            console.log('Decrement button clicked!');
-            const current = getMinutesCount();
-            const newValue = Math.max(10, current - 10);
-            dom.minutesInput.setAttribute('data-actual-value', newValue);
-            // Update display immediately
-            updateMinutesDisplay();
-            dom.minutesInput.dispatchEvent(new Event('change'));
-          });
-        } else {
-          console.error('Minutes decrement button not found!');
-        }
-
-        function updateMinutesDisplay() {
-          // Get the actual value from data attribute or input
-          const actualValue = dom.minutesInput.getAttribute('data-actual-value');
-          let minutes;
-          if (actualValue) {
-            minutes = parseInt(actualValue, 10);
-          } else {
-            minutes = parseInt(dom.minutesInput.value, 10);
-          }
-          // Ensure we have a valid number
-          if (!Number.isFinite(minutes) || minutes < 10) {
-            minutes = 10;
-          }
-          
-          // Always keep the input value as a number for the HTML input field
-          dom.minutesInput.value = String(minutes);
-          
-          // Reset to normal display for all values
-          dom.minutesInput.removeAttribute('data-actual-value');
-          dom.minutesInput.placeholder = '';
-          dom.minutesInput.style.color = 'var(--text)';
-          dom.minutesInput.style.caretColor = 'var(--text)';
-          dom.minutesInput.style.backgroundColor = '';
-        }
+        document.getElementById('minutes-increment').addEventListener('click', () => {
+          const current = getMinutesCount();
+          dom.minutesInput.value = String(Math.min(180, current + 10));
+          dom.minutesInput.dispatchEvent(new Event('change'));
+        });
+        document.getElementById('minutes-decrement').addEventListener('click', () => {
+          const current = getMinutesCount();
+          dom.minutesInput.value = String(Math.max(10, current - 10));
+          dom.minutesInput.dispatchEvent(new Event('change'));
+        });
 
         function updateBlocksButtonsDisabled() {
           const current = getBlocksCount();
           const inc = document.getElementById('blocks-increment');
           const dec = document.getElementById('blocks-decrement');
           if (inc) {
-            inc.disabled = current >= 10;
-            inc.title = current >= 10 ? 'Maximum 10 blocks' : 'Increase blocks';
+            inc.disabled = current >= 5;
+            inc.title = current >= 5 ? 'Maximum 5 blocks' : 'Increase blocks';
           }
           if (dec) {
             dec.disabled = current <= 1;
@@ -1213,12 +1144,7 @@
         updateBlocksButtonsDisabled();
         dom.minutesInput.addEventListener('input', updateMinutesButtonsDisabled);
         dom.minutesInput.addEventListener('change', updateMinutesButtonsDisabled);
-        dom.minutesInput.addEventListener('input', updateMinutesDisplay);
         updateMinutesButtonsDisabled();
-        updateMinutesDisplay(); // Initialize the display
-        
-        console.log('Event listeners attached. Minutes input element:', dom.minutesInput);
-        console.log('Minutes increment button:', document.getElementById('minutes-increment'));
         dom.startPauseBtn.addEventListener("click", () => {
           if (blockTimerState.isRunning) {
             pauseTimer();
@@ -1246,9 +1172,6 @@
         blockTimerState.elapsedMs = 0;
         blockTimerState.targetMs = computeEffectiveTargetMs();
         renderTimer();
-        
-        // Test console logging
-        console.log('BLOCKADORO initialized successfully');
       })();
     </script>
   </body>

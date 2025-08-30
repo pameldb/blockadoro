@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #f2a900;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #f2a900;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(242, 169, 0, 0.3);
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(242, 169, 0, 0.5);
+            letter-spacing: 3px;
+        }
+
+        .time-display {
+            font-size: 4rem;
+            font-weight: 700;
+            margin: 30px 0;
+            text-shadow: 0 0 30px rgba(242, 169, 0, 0.7);
+            letter-spacing: 5px;
+        }
+
+        .date-display {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            margin: 30px 0;
+        }
+
+        .timezone-select {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #f2a900;
+            color: #f2a900;
+            padding: 10px 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .timezone-select:focus {
+            box-shadow: 0 0 15px rgba(242, 169, 0, 0.5);
+        }
+
+        .checkbox-group {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #f2a900;
+            cursor: pointer;
+        }
+
+        .bitcoin-info {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid rgba(242, 169, 0, 0.3);
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .bitcoin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(242, 169, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .bitcoin-label {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .bitcoin-value {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .loading {
+            color: #f2a900;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .glow {
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(242, 169, 0, 0.5); }
+            to { text-shadow: 0 0 30px rgba(242, 169, 0, 0.8), 0 0 40px rgba(242, 169, 0, 0.3); }
+        }
+
+        .block-timer {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid rgba(242, 169, 0, 0.5);
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .timer-display {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin: 15px 0;
+            text-shadow: 0 0 20px rgba(242, 169, 0, 0.7);
+            letter-spacing: 3px;
+        }
+
+        .timer-label {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f2a900, #ffd700);
+            border-radius: 4px;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(242, 169, 0, 0.5);
+        }
+
+        .block-mined {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #f2a900;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            z-index: 1000;
+            animation: blockMined 3s ease-in-out forwards;
+            box-shadow: 0 0 50px rgba(242, 169, 0, 0.8);
+        }
+
+        .block-mined h2 {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #f2a900;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(242, 169, 0, 0.8);
+            animation: textGlow 0.5s ease-in-out infinite alternate;
+        }
+
+        .block-mined p {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        @keyframes blockMined {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 20px rgba(242, 169, 0, 0.8); }
+            to { text-shadow: 0 0 40px rgba(242, 169, 0, 1), 0 0 60px rgba(242, 169, 0, 0.5); }
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .timer-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #f2a900;
+            color: #f2a900;
+            padding: 8px 16px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .timer-btn:hover {
+            background: rgba(242, 169, 0, 0.2);
+            box-shadow: 0 0 15px rgba(242, 169, 0, 0.5);
+        }
+
+        .timer-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title glow">BITCOIN CLOCK</h1>
+        
+        <div class="time-display" id="timeDisplay"></div>
+        <div class="date-display" id="dateDisplay"></div>
+        
+        <div class="controls">
+            <select class="timezone-select" id="timezoneSelect">
+                <option value="America/New_York">America/New_York</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+            </select>
+            
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="showBlockHeight">
+                    <label for="showBlockHeight">Block Height</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="showPrice">
+                    <label for="showPrice">Bitcoin Price</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bitcoin-info" id="bitcoinInfo" style="display: none;">
+            <div class="bitcoin-item" id="blockHeightItem" style="display: none;">
+                <span class="bitcoin-label">Block Height:</span>
+                <span class="bitcoin-value" id="blockHeightValue">Loading...</span>
+            </div>
+            <div class="bitcoin-item" id="priceItem" style="display: none;">
+                <span class="bitcoin-label">Bitcoin Price:</span>
+                <span class="bitcoin-value" id="priceValue">Loading...</span>
+            </div>
+        </div>
+
+        <div class="block-timer" id="blockTimer">
+            <div class="timer-label">NEXT BLOCK COUNTDOWN</div>
+            <div class="timer-display" id="timerDisplay">10:00</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn" id="startTimer">Start Timer</button>
+                <button class="timer-btn" id="resetTimer">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="block-mined" id="blockMinedNotification" style="display: none;">
+        <h2>BLOCK MINED!</h2>
+        <p>New Bitcoin block found</p>
+        <p>Height: <span id="newBlockHeight"></span></p>
+    </div>
+    </div>
+
+    <script>
+        class BitcoinClock {
+            constructor() {
+                this.timeDisplay = document.getElementById('timeDisplay');
+                this.dateDisplay = document.getElementById('dateDisplay');
+                this.timezoneSelect = document.getElementById('timezoneSelect');
+                this.bitcoinInfo = document.getElementById('bitcoinInfo');
+                this.blockHeightItem = document.getElementById('blockHeightItem');
+                this.priceItem = document.getElementById('priceItem');
+                this.blockHeightValue = document.getElementById('blockHeightValue');
+                this.priceValue = document.getElementById('priceValue');
+                
+                this.showBlockHeight = document.getElementById('showBlockHeight');
+                this.showPrice = document.getElementById('showPrice');
+                
+                // Timer elements
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.progressFill = document.getElementById('progressFill');
+                this.startTimerBtn = document.getElementById('startTimer');
+                this.resetTimerBtn = document.getElementById('resetTimer');
+                this.blockMinedNotification = document.getElementById('blockMinedNotification');
+                this.newBlockHeight = document.getElementById('newBlockHeight');
+                
+                // Timer state
+                this.timerRunning = false;
+                this.timerInterval = null;
+                this.blockTime = 10 * 60; // 10 minutes in seconds
+                this.currentTime = this.blockTime;
+                this.lastBlockHeight = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.updateTime();
+                this.setupEventListeners();
+                setInterval(() => this.updateTime(), 1000);
+                this.updateBitcoinData();
+                setInterval(() => this.updateBitcoinData(), 30000); // Update every 30 seconds
+            }
+            
+            setupEventListeners() {
+                this.timezoneSelect.addEventListener('change', () => this.updateTime());
+                this.showBlockHeight.addEventListener('change', () => this.toggleBitcoinInfo());
+                this.showPrice.addEventListener('change', () => this.toggleBitcoinInfo());
+                
+                // Timer event listeners
+                this.startTimerBtn.addEventListener('click', () => this.toggleTimer());
+                this.resetTimerBtn.addEventListener('click', () => this.resetTimer());
+            }
+            
+            updateTime() {
+                const timezone = this.timezoneSelect.value;
+                const now = new Date();
+                
+                const timeString = now.toLocaleTimeString('en-US', {
+                    timeZone: timezone,
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const dateString = now.toLocaleDateString('en-US', {
+                    timeZone: timezone,
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                this.timeDisplay.textContent = timeString;
+                this.dateDisplay.textContent = dateString;
+            }
+            
+            toggleBitcoinInfo() {
+                const showBlock = this.showBlockHeight.checked;
+                const showPrice = this.showPrice.checked;
+                
+                if (showBlock || showPrice) {
+                    this.bitcoinInfo.style.display = 'block';
+                    this.blockHeightItem.style.display = showBlock ? 'flex' : 'none';
+                    this.priceItem.style.display = showPrice ? 'flex' : 'none';
+                    
+                    if (showBlock) this.fetchBlockHeight();
+                    if (showPrice) this.fetchBitcoinPrice();
+                } else {
+                    this.bitcoinInfo.style.display = 'none';
+                }
+            }
+            
+            async fetchBlockHeight() {
+                try {
+                    this.blockHeightValue.textContent = 'Loading...';
+                    this.blockHeightValue.className = 'bitcoin-value loading pulse';
+                    
+                    const response = await fetch('https://mempool.space/api/blocks/tip/height');
+                    if (!response.ok) throw new Error('Failed to fetch block height');
+                    
+                    const height = await response.text();
+                    this.blockHeightValue.textContent = parseInt(height).toLocaleString();
+                    this.blockHeightValue.className = 'bitcoin-value';
+                } catch (error) {
+                    this.blockHeightValue.textContent = 'Error';
+                    this.blockHeightValue.className = 'bitcoin-value error';
+                    console.error('Error fetching block height:', error);
+                }
+            }
+            
+            async fetchBitcoinPrice() {
+                try {
+                    this.priceValue.textContent = 'Loading...';
+                    this.priceValue.className = 'bitcoin-value loading pulse';
+                    
+                    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+                    if (!response.ok) throw new Error('Failed to fetch price');
+                    
+                    const data = await response.json();
+                    const price = data.bitcoin.usd;
+                    this.priceValue.textContent = `$${price.toLocaleString()}`;
+                    this.priceValue.className = 'bitcoin-value';
+                } catch (error) {
+                    this.priceValue.textContent = 'Error';
+                    this.priceValue.className = 'bitcoin-value error';
+                    console.error('Error fetching Bitcoin price:', error);
+                }
+            }
+            
+            updateBitcoinData() {
+                if (this.showBlockHeight.checked) {
+                    this.fetchBlockHeight();
+                }
+                if (this.showPrice.checked) {
+                    this.fetchBitcoinPrice();
+                }
+            }
+            
+            // Timer methods
+            toggleTimer() {
+                if (this.timerRunning) {
+                    this.stopTimer();
+                } else {
+                    this.startTimer();
+                }
+            }
+            
+            startTimer() {
+                this.timerRunning = true;
+                this.startTimerBtn.textContent = 'Stop Timer';
+                this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+            }
+            
+            stopTimer() {
+                this.timerRunning = false;
+                this.startTimerBtn.textContent = 'Start Timer';
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+            
+            resetTimer() {
+                this.stopTimer();
+                this.currentTime = this.blockTime;
+                this.updateTimerDisplay();
+                this.updateProgressBar();
+            }
+            
+            updateTimer() {
+                this.currentTime--;
+                
+                if (this.currentTime <= 0) {
+                    this.blockMined();
+                    this.currentTime = this.blockTime;
+                }
+                
+                this.updateTimerDisplay();
+                this.updateProgressBar();
+            }
+            
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.currentTime / 60);
+                const seconds = this.currentTime % 60;
+                this.timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            updateProgressBar() {
+                const progress = ((this.blockTime - this.currentTime) / this.blockTime) * 100;
+                this.progressFill.style.width = `${progress}%`;
+            }
+            
+            async blockMined() {
+                // Show notification
+                this.showBlockMinedNotification();
+                
+                // Check if block height actually increased
+                if (this.showBlockHeight.checked) {
+                    await this.checkForNewBlock();
+                }
+            }
+            
+            showBlockMinedNotification() {
+                this.blockMinedNotification.style.display = 'block';
+                
+                // Hide notification after animation completes
+                setTimeout(() => {
+                    this.blockMinedNotification.style.display = 'none';
+                }, 3000);
+            }
+            
+            async checkForNewBlock() {
+                try {
+                    const response = await fetch('https://mempool.space/api/blocks/tip/height');
+                    if (!response.ok) return;
+                    
+                    const height = parseInt(await response.text());
+                    
+                    if (this.lastBlockHeight && height > this.lastBlockHeight) {
+                        this.newBlockHeight.textContent = height.toLocaleString();
+                        this.lastBlockHeight = height;
+                    } else if (!this.lastBlockHeight) {
+                        this.lastBlockHeight = height;
+                    }
+                } catch (error) {
+                    console.error('Error checking for new block:', error);
+                }
+            }
+        }
+        
+        // Initialize the clock when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new BitcoinClock();
+        });
+    </script>
+</body>
+</html>
